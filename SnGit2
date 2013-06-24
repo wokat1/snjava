@@ -1,0 +1,197 @@
+package sngit;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.text.NumberFormat;
+import java.util.Random;
+import java.io.PrintWriter;
+import java.util.Scanner;
+import macierztest.Files;
+
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+/**
+ *
+ * @author wokat
+ */
+public class SnGit {
+
+    public static void main(String[] args) throws IOException {
+//        ViewSN view = new ViewSN();
+//        view.setVisible(true);
+
+        Random rand = new Random();
+        int ile_itr = 2;
+        int num_inpu = 2;
+        double eta = 0.4;
+        int zmiana;
+        double alfa = 1;
+        PrintWriter zap = new PrintWriter("d:/zap.txt");
+        PrintWriter test = new PrintWriter("d:/test.txt");
+        File file = new File("d:/doktorat/predykcja/Control.txt");
+        Scanner scan = new Scanner(file);
+        Files plik = new Files("d:/doktorat/predykcja/Control.txt", " ");
+        System.out.println(file.getName());
+       // view.jTextArea1.append(file.getName());
+        double[][] x = new double[plik.rows][plik.col];
+        System.out.println("długość pliku to " + x.length);
+       // view.jTextArea1.append("\ndługość pliku to " + x.length);
+        for (int i = 0; i < plik.rows; i++) {
+            String temp[] = scan.nextLine().split(" ");
+            for (int j = 0; j < plik.col; j++) {
+                x[i][j] = Double.parseDouble(temp[j]);
+            }
+        }
+        ;
+        System.out.println("\nile kolumn " + plik.col + " ile row " + plik.rows);
+       // view.jTextArea2.append("ile kolumn " + plik.col + " ile row " + plik.rows);
+        scan.close();
+
+        double[] x1 = new double[plik.col];
+        double[] x2 = new double[plik.col];
+        double[] d = new double[plik.col - 2];
+
+
+        NumberFormat nf = NumberFormat.getNumberInstance();
+        nf.setMaximumFractionDigits(4);
+
+        double[][] wagi1 = new double[num_inpu][3];
+        double[][] wagi2 = new double[num_inpu][3];
+        double[] wagi3 = new double[3];
+        System.out.println("-------------------------- Wagi1: -----------------------------");
+       // view.jTextArea1.append("\n-------------------------- Wagi1: -----------------------------\n");
+        for (int i = 0; i < num_inpu; i++) {
+            for (int j = 0; j < 3; j++) {
+                wagi1[i][j] = rand.nextGaussian();
+                System.out.print(wagi1[i][j] + " ");
+                //   view.jTextArea1.append(wagi1[i][j] + " ");
+            }
+            System.out.println("");
+            // view.jTextArea1.append("\n");
+        }
+        System.out.println("---------------------------------------------------------------");
+        for (int i = 0; i < num_inpu; i++) {
+            for (int j = 0; j < 3; j++) {
+                wagi2[i][j] = rand.nextGaussian();
+            }
+        }
+
+        for (int j = 0; j < 3; j++) {
+            wagi3[j] = rand.nextGaussian();
+        }
+        int licz = 0;
+        double y3 = 0;
+        double s1[] = new double[num_inpu], s2[] = new double[num_inpu], s3 = 0;
+        double y1[] = new double[num_inpu], y2[] = new double[num_inpu];
+        double ep1[] = new double[num_inpu];
+        double delta1[] = new double[num_inpu];
+        double ep3 = 0, ep2[] = new double[num_inpu], del3 = 0, delta2[] = new double[num_inpu];
+       // view.rysujWykres(view.jTabbedPane3.getGraphics(), view.jTabbedPane3.getWidth(), view.jTabbedPane3.getHeight());
+
+        do {
+
+            double blad = 0;
+            for (int i = 2000; i < 2102/*plik.rows - plik.rows / 10*/; i++) {
+
+                /*
+                 * Wczytanie kolejnych danych do wektora  oraz wektora uczącego
+                 */
+                for (int j = 5; j < d.length - 1; j++) {
+                    x1[j] = x[i][j];
+                    x2[j] = x[i][j + 1];
+                    d[j] = x[i][j + 2];
+                   // view.rysujFunkcje(view.jTabbedPane3.getGraphics(), view.jTabbedPane3.getWidth(), view.jTabbedPane3.getHeight(), j);
+                    for (int k = 0; k < num_inpu; k++) {
+                        System.out.print("\nx1 " + x1[j] + " x2 " + x2[j] + " d " + d[j] + "\n -------------------------------------------->   ");
+                 //       view.jTextArea1.append("\nx1 " + x1[j] + " x2 " + x2[j] + " d " + d[j] + "\n -------------------------------------------->  ");
+//                         view.jTable1.setValueAt(x1[j], j-5, 0);
+//                         view.jTable1.setValueAt(x2[j], j-5, 1);
+//                         view.jTable1.setValueAt(d[j], j-5, 2);
+//                         view.jTable1.setValueAt(ep3, j-5, 3);
+                        s1[k] = wagi1[k][1] * x1[j] + wagi1[k][2] * x2[j] - wagi1[k][0]; //
+                        y1[k] = 1 / (1 + Math.exp(-s1[k]));
+
+
+                        s2[k] = wagi2[k][1] * y1[k] + wagi2[k][2] * y1[k] - wagi2[k][0];
+                        y2[k] = 1 / (1 + Math.exp(-s2[k]));
+
+
+                        s3 = wagi3[1] * y2[k] + wagi3[2] * y2[k] - wagi3[0];
+                        y3 = 1 / (1 + Math.exp(-s3));
+
+                        // --------------------------------uczenie wag warstwy trzeciej
+
+                        ep3 = 0.5 * Math.sqrt(Math.pow((d[j] - y3), 2));//Math.sqrt(blad) / 1000
+                        // ep3 = 0.5 * Math.pow((ep3), 2);
+                        del3 = ep3 * (y3 * (1 - y3));
+                        // zap.print(y3 + " " + ep3 + " ");
+                        System.out.println("y3 " + y3 + " " + "  | ep3 " + ep3 + " ");
+                        //  view.jTextArea1.append("y3 " + y3 + " " + "  | ep3 " + ep3 + " ");
+                        // System.out.print(" " + nf.format(y3) + " " + "( -->" + d[j] + ")   |");
+
+                        blad = 0.5 * Math.pow((ep3), 2);
+                        wagi3[0] = alfa * wagi3[0] - eta * del3;
+                        wagi3[1] = alfa * wagi3[1] + eta * del3 * s2[k];
+                        wagi3[2] = alfa * wagi3[2] + eta * del3 * s2[k];
+
+                        ep2[k] = wagi3[1] * del3;
+                        //ep2_2 = wagi3[2] * del3;
+                        delta2[k] = ep2[k] * y2[k] * (1 - y2[k]);
+                        //delta2_2 = ep2_2 * y2_2 * (1 - y2_2);
+
+                        for (int l = 0; l < 3; l++) {
+                            wagi2[k][l] = wagi2[k][l] + eta * delta2[k] * s1[k];
+                            // wagi2[1][l] = wagi2[1][l] + eta * delta2 * s1_2;
+                        }
+                        ep1[k] = wagi2[k][1] * delta2[k] + wagi2[k][2] * delta2[k];
+                        // ep1_2 = wagi2[1][1] * delta2_1 + wagi2[1][2] * delta2_2;
+
+                        delta1[k] = ep1[k] * y1[k] * (1 - y1[k]);
+                        // delta1_2 = ep1_2 * y1_2 * (1 - y1_2);
+
+                        for (int l = 0; l < 3; l++) {
+                            wagi1[k][l] = wagi1[k][l] + eta * delta1[k] * x1[j];
+                            // wagi1[1][l] = wagi1[1][l] + eta * delta1_2 * x2[j];
+                        }
+                    }
+                    zap.print(y3 + " " + ep3 + " ");
+                    blad = Math.sqrt(blad) / 1000;
+                    System.out.println("  --> bład wynosi: " + nf.format(blad) + " ");
+                    zap.println(blad);
+//                    if (j == 78) {
+//                        test.println(ep3);
+//                        System.out.println("<<<<<>>>>>>><<<<<<<<<<>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>");
+//                        test.close();
+//                    }
+
+                }
+            }//koniec petli l;
+            licz++;
+        } while (licz < 1);
+        zap.close();
+
+        /*
+         * Testowanie sieci 
+         */
+        BufferedReader strin = new BufferedReader(new InputStreamReader(System.in));
+        System.out.println("Testowanie sieci -----------;;;;;--------------------;;;;;;-----------------");
+        for (int i = 5 /*plik.rows - plik.rows / 10*/; i < 6; i++) {
+            for (int j = 0; j < num_inpu; j++) {
+                System.out.print("\nx1 " + x1[i] + " x2 " + x2[i] + " d " + d[i] + "\n -------------------------------------------->   ");
+                s1[j] = wagi1[j][1] * x1[i] + wagi1[j][1] * x2[i] - wagi1[j][0]; //
+                y1[j] = 1 / (1 + Math.exp(-s1[j]));
+                s2[j] = wagi2[j][1] * y1[j] + wagi2[j][1] * y1[j] - wagi2[j][0];
+                y2[j] = 1 / (1 + Math.exp(-s2[j]));
+                s3 = wagi3[1] * y2[j] + wagi3[2] * y2[j] - wagi3[0];
+                y3 = 1 / (1 + Math.exp(-s3));
+                test.println(y3);
+                System.out.println("y3 testowe wynosi " + y3);
+                test.close();
+            }
+        }
+    }
+}
